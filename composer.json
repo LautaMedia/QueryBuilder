@@ -1,0 +1,27 @@
+{
+  "name": "lauta-media/query-builder",
+  "description": "QueryBuilder",
+  "type": "library",
+  "require-dev": {
+    "phpunit/phpunit": "^9.3",
+    "vimeo/psalm": "^3.14",
+    "mheap/phpunit-github-actions-printer": "^1.2"
+  },
+  "authors": [
+    {
+      "name": "Make",
+      "email": "markus.meripihka@lauta.media"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Query\\": "QueryBuilder/"
+    },
+    "files": [
+      "QueryBuilder/functions.php"
+    ]
+  },
+  "require": {
+    "ext-pdo": "*"
+  }
+}

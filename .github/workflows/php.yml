@@ -1,0 +1,102 @@
+name: PHP
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - staging
+
+jobs:
+  psalm:
+    name: Static analysis
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: dorny/paths-filter@v2.2.0
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            psalm:
+              - '**/*.php'
+              - '**/*.phtml'
+              - 'psalm.xml'
+              - '.github/workflows/php.yml'
+
+      - name: Checkout repository
+        if: github.event_name == 'push' || steps.filter.outputs.psalm == 'true'
+        uses: actions/checkout@v2
+
+      - name: Composer cache
+        uses: actions/cache@v1
+        id: composer-cache
+        if: github.event_name == 'push' || steps.filter.outputs.psalm == 'true'
+        with:
+          path: vendor
+          key: cc-dev-${{ hashFiles('**/composer.lock') }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        if: |
+          (github.event_name == 'push' || steps.filter.outputs.psalm == 'true') &&
+          steps.composer-cache.outputs.cache-hit != 'true'
+        with:
+          php-version: '7.4'
+          extensions: intl
+
+      - name: Composer
+        if: |
+          (github.event_name == 'push' || steps.filter.outputs.psalm == 'true') &&
+          steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --no-progress
+
+      - name: Psalm
+        if: github.event_name == 'push' || steps.filter.outputs.psalm == 'true'
+        run: |
+          php7.4 ./vendor/bin/psalm --output-format=github
+
+  phpunit:
+    name: Unit tests
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: dorny/paths-filter@v2.2.0
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            php:
+              - '**/*.php'
+              - '**/*.phtml'
+              - 'phpunit.xml'
+              - '.github/workflows/php.yml'
+
+      - name: Checkout repository
+        if: github.event_name == 'push' || steps.filter.outputs.php == 'true'
+        uses: actions/checkout@v2
+
+      - name: Composer cache
+        uses: actions/cache@v1
+        id: composer-cache
+        if: github.event_name == 'push' || steps.filter.outputs.php == 'true'
+        with:
+          path: vendor
+          key: cc-dev-${{ hashFiles('**/composer.lock') }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        if: |
+          (github.event_name == 'push' || steps.filter.outputs.php == 'true') &&
+          steps.composer-cache.outputs.cache-hit != 'true'
+        with:
+          php-version: '7.4'
+          extensions: intl
+
+      - name: Composer
+        if: |
+          (github.event_name == 'push' || steps.filter.outputs.php == 'true') &&
+          steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --no-progress
+
+      - name: Unit tests
+        if: github.event_name == 'push' || steps.filter.outputs.php == 'true'
+        run: |
+          php7.4 ./vendor/bin/phpunit --printer mheap\\GithubActionsReporter\\Printer
