@@ -154,7 +154,7 @@ class SelectTest extends TestCase
     public function testLimit(): void
     {
         $this->assertEquals(
-            'SELECT * FROM a LIMIT 0, 1',
+            'SELECT * FROM a LIMIT 1 OFFSET 0',
             (string)select()
                 ->from('a')
                 ->limit(1)
@@ -164,7 +164,7 @@ class SelectTest extends TestCase
     public function testOffset(): void
     {
         $this->assertEquals(
-            'SELECT * FROM a LIMIT 1, 1',
+            'SELECT * FROM a LIMIT 1 OFFSET 1',
             (string)select()
                 ->from('a')
                 ->limit(1, 1)
@@ -266,7 +266,7 @@ class SelectTest extends TestCase
     public function testGroupByWhere(): void
     {
         $this->assertEquals(
-            'SELECT * FROM a WHERE 1 GROUP BY b, c LIMIT 1, 1',
+            'SELECT * FROM a WHERE 1 GROUP BY b, c LIMIT 1 OFFSET 1',
             (string)select()
                 ->from('a')
                 ->where('1')
@@ -279,7 +279,7 @@ class SelectTest extends TestCase
     public function testFullQuery(): void
     {
         $this->assertEquals(
-            'SELECT * FROM a b LEFT JOIN c d ON 1 RIGHT JOIN e f ON 2 INNER JOIN g h ON 3 WHERE (4) AND (5) GROUP BY i, j HAVING (6) AND (7) ORDER BY k ASC, l DESC LIMIT 9, 8',
+            'SELECT * FROM a b LEFT JOIN c d ON 1 RIGHT JOIN e f ON 2 INNER JOIN g h ON 3 WHERE (4) AND (5) GROUP BY i, j HAVING (6) AND (7) ORDER BY k ASC, l DESC LIMIT 8 OFFSET 9',
             (string)select()
                 ->from('a', 'b')
                 ->leftJoin('c', '1', 'd')

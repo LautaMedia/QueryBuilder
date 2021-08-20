@@ -86,30 +86,4 @@ class InsertTest extends TestCase
         /** @var Executor $pdoMock */
         $query->execute($pdoMock);
     }
-
-    public function testOnDuplicateKeyUpdate() {
-        $this->assertEquals(
-            'INSERT INTO a(b) VALUES (?) ON DUPLICATE KEY UPDATE b = VALUES(b)',
-            (string)insertInto('a')
-                ->value('b', '', true)
-        );
-    }
-
-    public function testOnDuplicateKeyUpdateTo() {
-        $this->assertEquals(
-            'INSERT INTO a(b) VALUES (?) ON DUPLICATE KEY UPDATE b = 1',
-            (string)insertInto('a')
-                ->value('b', '', true, '1')
-        );
-    }
-
-    public function testOnDuplicateKeyUpdateMultiple() {
-        $this->assertEquals(
-            'INSERT INTO a(b, c, d) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE b = VALUES(b), c = VALUES(c)',
-            (string)insertInto('a')
-                ->value('b', '', true)
-                ->value('c', '', true)
-                ->value('d', '')
-        );
-    }
 }

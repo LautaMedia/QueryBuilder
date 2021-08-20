@@ -1,13 +1,13 @@
 # QueryBuilder Documentation
 
-The purpose of this query builder is to make it easy to write, reuse and abstract sql queries in PHP.
+The purpose of this project is to make it easy to compose PostgreSQL queries in PHP.
 
-All QueryBuilder methods are globally available through  namespace.
+All the functions defined below are globally available through \Query\ namespace.
 
 This module is fully self-contained and does not have any internal or external dependencies.
 
-The interface of this query builder is pretty straightforward if you have previous SQL experience.
-It mostly mimics the MySQL syntax in PHP with a few exceptions and shortcuts.
+The interface should be straightforward if you have previous SQL experience.
+It tries to mimic SQL syntax in PHP except when SQL syntax is more complicated than it needs to be.
 
 ## IMPORTANT
 
@@ -33,9 +33,13 @@ update('table')
     ->set('column', $anything);
 ```
 
+# Examples
+
 ## Select
 
-### Table syntax
+### Table
+
+You may want to start a select query with table shorthand.
 
 ```PHP
 function table(string $from, $alias=''){...}
@@ -51,8 +55,8 @@ table('table')->select('column')
 ```
 
 ### Select
-As in SQL, select queries start with a select() method and optional parameters defining what you want to select.
 
+You can still use select and select-from if you want to.
 
 ```PHP
 function select(string ...$parameters){...}
@@ -64,8 +68,7 @@ select();
 select('1', '2');
 ```
 
-### From
-
+#### From
 
 ```PHP
 function from(string $table_name, string $alias=''){...}
@@ -83,20 +86,21 @@ select()->from('table', 'alias');
 function where(string $conditions){...}
 
 // SELECT * FROM table WHERE 1 = 1
-select()->from('table')->where(equal('1', '1'));
+table('table')->where(equal('1', '1'));
 ```
 this is equivalent to
 ```PHP
-select()->from('table')->where('1 = 1');
+table('table')->where('1 = 1');
 ```
 
-Contrary to SQL syntax you can stack where functions.
+Contrary to native SQL syntax you can stack where functions.
 ```PHP
 // SELECT * FROM table WHERE 1 = 1 AND 2 = 2
-$query = select()->from('table')->where('1 = 1');
+$query = table('table')->where('1 = 1');
 $query->where(equal('2', '2'));
 ```
-This can be useful if you want to reuse conditions
+
+This can be useful if you want to reuse conditions.
 ```PHP
 // SELECT * FROM table WHERE 1 = 1 AND 3 = 3
 $query->where(equal('3', '3'));
@@ -109,11 +113,13 @@ function leftJoin(string $table, string $conditions, string $alias=''){...}
 function rightJoin(string $table, string $conditions, string $alias=''){...}
 
 // SELECT * FROM table JOIN table2 ON table.id = table2.table1_id
-select()->from('table')->join('table2', equal('table.id', 'table2.table1.id'));
+table('table')->join('table2', equal('table.id', 'table2.table1.id'));
 ```
-Like where, joins can be stacked
+
+####Multiple joins
+
 ```PHP
-select()->from('table')->join(...)->leftJoin(...)->rightJoin(...);
+table('table')->join(...)->leftJoin(...)->rightJoin(...);
 ```
 
 
@@ -123,7 +129,7 @@ function asc(string $column){...}
 function desc(string $column){...}
 
 // SELECT * FROM table ORDER BY row ASC, row2 DESC
-select()->from('table')->asc('row')->desc('row2');
+table('table')->asc('row')->desc('row2');
 ```
 
 ### Group By
@@ -131,18 +137,15 @@ select()->from('table')->asc('row')->desc('row2');
 function group(string $column){...}
 
 // SELECT * FROM table GROUP BY a
-select()->from('table')->group('a');
+table('table')->group('a');
 ```
 
-
 ### Having
-Having works exactly like where, but it is applied later
-Check MySql documentation for more information
 ```PHP
 function having(string $conditions){...}
 
 // SELECT * FROM table HAVING 1 = 1
-select()->from('table')->having('1 = 1');
+table('table')->having('1 = 1');
 ```
 
 ### Limit, Offset
@@ -150,20 +153,19 @@ select()->from('table')->having('1 = 1');
 function limit(int $limit, int $offset=0){...}
 
 // SELECT * FROM table LIMIT 5
-select()->from('table')->limit(5);
+table('table')->limit(5);
 // SELECT * FROM table LIMIT 5, 1
-select()->from('table')->limit(5, 1);
+table('table')->limit(5, 1);
 ```
 
-### Union and alias
+### Union
 
-You can use unions with query builder just as you can with SQL
 ```PHP
 $query->union($query);
 $query->unionAll($query);
 ```
 
-You can also define an alias for a subquery
+### Union with alias
 ```PHP
 $query->as('alias');
 ```
@@ -182,22 +184,12 @@ with()->cte('cte1', select(1, 2), ['a', 'b'])->query(select(5, 6))
 ```
 
 
-### Unsupported keywords
-
-- Priority keywords
-- INTO
-- WINDOW
-- PARTITION
-- ROLLUP
-- FOR
-
 ## Insert
 
-Inserting is really straightforward. Values are automatically escaped.
 ```PHP
 function insertInto(string $table){...}
 function insertIgnoreInto(string $table){...}
-function value(string $column, $value, bool $onDuplicateUpdate=false, string $to=''){...}
+function value(string $column, $value){...}
 
 // INSERT INTO table(a, b, c) VALUES(1, 2, 3)
 insertInto('table')
@@ -206,7 +198,8 @@ insertInto('table')
     ->value('c', 3)
     ->execute($db);
 ```
-Inserting multiple values in a loop.
+
+#### Insert multiple
 ```PHP
 // INSERT INTO table(a, b) VALUES (1, 1), (2, 2)
 $query = insertInto('table');
@@ -218,27 +211,11 @@ foreach ($items as $item) {
 }
 ```
 
-Update values on duplicate key
-```PHP
-// INSERT INTO table(a, b, c) VALUES(1, 2, 3) ON DUPLICATE KEY UPDATE a = VALUES(a), b = 1
-insertInto('table')
-    ->value('a', 1, true)
-    ->value('b', 2, true, '1')
-    ->value('c', 3)
-    ->execute($db);
-}
-```
 
-### Unsupported keywords
-
-- Priority keywords
-- PARTITION
-- SELECT
-- TABLE
 
 ## Update
 
-Updating is really simple. set() function escapes values automatically
+Updating is really simple. set() function escapes values automatically.
 ```PHP
 function update(string $table){...}
 function set(string $column, $value){...}
@@ -261,7 +238,6 @@ update('table')
 
 ## Delete
 
-Delete shares methods with Select From but does not have having() and limit() does not support offset
 ```PHP
 // DELETE FROM table JOIN table2 ON table1.id = table2.table1_i WHERE column = value GROUP BY column LIMIT 5
 deleteFrom('table')
@@ -271,12 +247,6 @@ deleteFrom('table')
     ->limit(5);
 ```
 
-### Unsupported keywords
-
-- Priority keywords
-- IGNORE
-- PARTITION
-
 ## Binding values
 This section is not applicable for INSERT queries.
 
@@ -284,7 +254,7 @@ This section is not applicable for INSERT queries.
 function bind(string $key, $value) {}
 
 // Select query
-$query = select()->from('table')->where(equal('column', ':value'));
+$query = table('table')->where(equal('column', ':value'));
 $query->bind(':value', 123);
 
 // Update query's set() function binds values magically
@@ -344,4 +314,4 @@ all('a', 'b', 'c', 'd');
 
 // a IS NULL
 isNull('a');
-```
+``` 

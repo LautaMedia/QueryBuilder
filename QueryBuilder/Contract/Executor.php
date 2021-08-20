@@ -8,4 +8,5 @@ namespace Query\Contract;
 interface Executor
 {
     public function prepare(string $param): \PDOStatement;
+
 }

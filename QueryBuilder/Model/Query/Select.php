@@ -87,7 +87,7 @@ class Select implements Selectable, Table, Tableable
 
     public function get(Executor $dbConnection): Result
     {
-        $query = $dbConnection->prepare((string)$this);
+        $query = $dbConnection->prepare((string) $this);
         foreach ($this->binds->binds() as $key => $value) {
             $type = PDO::PARAM_STR;
             if (is_bool($value)) {
@@ -142,7 +142,7 @@ class Select implements Selectable, Table, Tableable
             $query .= sprintf(' ORDER BY %s', $orderString);
         }
         if ($this->limit) {
-            $query .= sprintf(' LIMIT %s, %s', $this->offset, $this->limit);
+            $query .= sprintf(' LIMIT %s OFFSET %s', $this->limit, $this->offset);
         }
 
         return $query;

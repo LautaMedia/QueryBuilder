@@ -12,7 +12,6 @@ class Insert implements \Query\Contract\Insert
     private string $table;
     private bool $ignore;
     private array $values = [];
-    private array $duplicateRules = [];
 
     public function __construct(string $table, bool $ignore)
     {
@@ -29,31 +28,19 @@ class Insert implements \Query\Contract\Insert
         $positionalParamString = sprintf('(%s)', implode(', ', $positionalParams));
         $count = $this->values ? count(max($this->values)) : 0;
         $params = implode(', ', array_fill(0, $count, $positionalParamString));
-        if ($this->duplicateRules){
-            $rules = [];
-            foreach($this->duplicateRules as $column => $rule){
-                $rules[] = sprintf('%s = %s', $column, $rule);
-            }
-            $ruleString = implode(', ', $rules);
-            $params = sprintf('%s ON DUPLICATE KEY UPDATE %s', $params, $ruleString);
-        }
         return sprintf('%s %s(%s) VALUES %s', $cmd, $this->table, $columns, $params);
     }
 
-    public function value(string $column, $value, bool $onDuplicateUpdate = false, string $to = ''): Insert
+    public function value(string $column, $value, int $type = PDO::PARAM_STR): Insert
     {
+        if (is_bool($value)) {
+            $type = PDO::PARAM_BOOL;
+        }
         $clone = clone $this;
         if (array_key_exists($column, $clone->values)) {
-            $clone->values[$column][] = $value;
+            $clone->values[$column][] = [$value, $type];
         } else {
-            $clone->values[$column] = [$value];
-        }
-        if ($onDuplicateUpdate){
-            if ($to){
-                $clone->duplicateRules[$column] = $to;
-            } else {
-                $clone->duplicateRules[$column] = sprintf('VALUES(%s)', $column);
-            }
+            $clone->values[$column] = [[$value, $type]];
         }
 
         return $clone;
@@ -66,11 +53,7 @@ class Insert implements \Query\Contract\Insert
         $index = 1;
         for ($set = 0; $set < $count; $set++) {
             foreach ($this->values as $key => $value) {
-                $type = PDO::PARAM_STR;
-                if (is_bool($value[$set])) {
-                    $type = PDO::PARAM_BOOL;
-                }
-                $query->bindValue($index, $value[$set], $type);
+                $query->bindValue($index, $value[$set][0], $value[$set][1]);
                 ++$index;
             }
         }
@@ -90,7 +73,7 @@ class Insert implements \Query\Contract\Insert
         for ($set = 0; $set < $count; $set++) {
             echo sprintf("%s:", $index);
             foreach ($this->values as $key => $value) {
-                echo sprintf(' %s => %s (%s),', $key, $value[$set], gettype($value[$set]));
+                echo sprintf(' %s => %s (%s),', $key, $value[$set][0], gettype($value[$set][0]));
                 ++$index;
             }
             echo "\n";
